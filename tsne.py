@@ -118,17 +118,19 @@ class tsne(object):
 
     def run(self, x=None, y=None):
         print '-' * 70
-        if x.any() and y.any():
+        if (x is not None) and (y is not None):
             print 'without reading files.'
             print 'Source x shape: ', x.shape
             print 'Source y shape: ', y.shape
             x_train = x
             y_train = y
-        else:
+        elif (x is None) and (y is None):
             print 'x path: ', self._args.x_dir
             print 'y path: ', self._args.y_dir
             x_train, y_train = self.__data_loader()
-
+        else:
+            print 'err input!'
+            return None
         if self._args.shuffle:
             p = np.random.permutation(len(x_train))
             x_train = x_train[p]
