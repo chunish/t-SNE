@@ -1,5 +1,6 @@
 # _*_ coding: utf-8 _*_
 import sys
+import time
 import pickle
 import argparse
 import numpy as np
@@ -19,7 +20,7 @@ def get_args():
                         help='Directory where plots are saved')
     parser.add_argument('--y_dir', type=str, default='D:/Desktop/hanchun.shen/Desktop/feats_from_yanhong/06272/512/gallery.npy',
                         help='Directory where plots are saved')
-    parser.add_argument('--num_dimensions', type=int, default=3,
+    parser.add_argument('--dims', type=int, default=2,
                           help='# of tsne dimensions. Can be 2 or 3.')
     parser.add_argument('--shuffle', type=bool, default=False,
                           help='Whether to shuffle the data before embedding.')
@@ -29,9 +30,9 @@ def get_args():
                           help='Whether to overlay images on data points. Only works with 2D plots.')
     parser.add_argument('--random_seed', type=int, default=42,
                           help='Seed to ensure reproducibility')
-    parser.add_argument('--data_dir', type=str, default='./sources/',
+    parser.add_argument('--data_dir', type=str, default='./plots/',
                           help='Directory where data is stored')
-    parser.add_argument('--plot_dir', type=str, default=None,
+    parser.add_argument('--plot_dir', type=str, default='./plots/',
                           help='Directory where plots are saved')
     
 
@@ -45,12 +46,14 @@ class tsne(object):
         self._args = get_args()
         self.__labels = None
 
+    def __save_name(self, dims):
+        return 'embeddings_{}D_'.format(str(dims)) + time.strftime('%m%d%H%M%S', time.localtime(time.time())) + '_{}_{}.png'.format(self._args.num_samples, self.__num_classes)
+
     def __data_loader(self):
         x_train = np.load(self._args.x_dir)
         y_train = np.load(self._args.y_dir)
-        print '-' * 70
-        print 'source features shape: ', x_train.shape
-        print 'source labels shape: ', y_train.shape
+        print 'source x shape: ', x_train.shape
+        print 'source y shape: ', y_train.shape
         return x_train, y_train
 
     def _plot2D(self, embeddings):
@@ -76,11 +79,13 @@ class tsne(object):
 
         ax.xaxis.set_major_formatter(NullFormatter())
         ax.yaxis.set_major_formatter(NullFormatter())
-
+        save_name = self.__save_name(2)
+        plt.title(save_name)
         plt.axis('tight')
+        plt.grid(True)
         plt.legend(loc='best', scatterpoints=1, fontsize=5)
         if self._args.plot_dir:
-            plt.savefig(self._args.plot_dir, dpi=900)
+            plt.savefig(self._args.plot_dir + save_name, dpi=900)
             print 'fig\'s been saved!'
         plt.show()
 
@@ -103,20 +108,26 @@ class tsne(object):
         ax.zaxis.set_major_formatter(NullFormatter())
         plt.axis('tight')
         plt.legend(loc='best', scatterpoints=1, fontsize=5)
+
+        save_name = self.__save_name(3)
+        plt.grid(True)
         if self._args.plot_dir:
-            plt.savefig(self._args.plot_dir, dpi=600)
+            plt.savefig(self._args.plot_dir + save_name, dpi=600)
+
         plt.show()
 
     def run(self):
-        args = get_args()
+        print '-' * 70
+        print 'x path: ', self._args.x_dir
+        print 'y path: ', self._args.y_dir
         x_train, y_train = self.__data_loader()
 
-        if args.shuffle:
+        if self._args.shuffle:
             p = np.random.permutation(len(x_train))
             x_train = x_train[p]
             y_train = y_train[p]
 
-        mask = np.arange(args.num_samples)
+        mask = np.arange(self._args.num_samples)
         self.__x_sample = x_train[mask].squeeze()
         self.__y_sample = y_train[mask]
 
@@ -125,21 +136,21 @@ class tsne(object):
         print 'LABELS NUM: ', len(self.__labels)
 
         embeddings = None
-        if args.compute_embeddings:
-            print 'Plotting x_sample shape: {}'.format(self.__x_sample.shape)
-            print 'Plotting y_sample shape: {}'.format(self.__y_sample.shape)
+        if self._args.compute_embeddings:
+            print 'Plotting x shape: {}'.format(self.__x_sample.shape)
+            print 'Plotting y shape: {}'.format(self.__y_sample.shape)
             print '-'*70
 
             x_sample_flat = np.reshape(self.__x_sample, [self.__x_sample.shape[0], -1])
 
-            embeddings = TSNE(n_components=args.num_dimensions, init='pca', verbose=2).fit_transform(x_sample_flat)
+            embeddings = TSNE(n_components=self._args.dims, init='pca', verbose=2).fit_transform(x_sample_flat)
 
         print '-' * 70
         print 'PLOTTING...'
 
-        if args.num_dimensions == 3:
+        if self._args.dims == 3:
             self._plot3D(embeddings)
-        elif args.num_dimensions == 2:
+        elif self._args.dims == 2:
             self._plot2D(embeddings)
 
         print '-' * 70
