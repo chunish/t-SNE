@@ -87,7 +87,7 @@ class tsne(object):
         if self._args.plot_dir:
             plt.savefig(self._args.plot_dir + save_name, dpi=900)
             print 'fig\'s been saved!'
-        plt.show()
+        # plt.show()
 
     def _plot3D(self, embeddings):
         if self._args.with_images:
@@ -114,13 +114,20 @@ class tsne(object):
         if self._args.plot_dir:
             plt.savefig(self._args.plot_dir + save_name, dpi=600)
 
-        plt.show()
+        # plt.show()
 
-    def run(self):
+    def run(self, x=None, y=None):
         print '-' * 70
-        print 'x path: ', self._args.x_dir
-        print 'y path: ', self._args.y_dir
-        x_train, y_train = self.__data_loader()
+        if x.any() and y.any():
+            print 'without reading files.'
+            print 'Source x shape: ', x.shape
+            print 'Source y shape: ', y.shape
+            x_train = x
+            y_train = y
+        else:
+            print 'x path: ', self._args.x_dir
+            print 'y path: ', self._args.y_dir
+            x_train, y_train = self.__data_loader()
 
         if self._args.shuffle:
             p = np.random.permutation(len(x_train))
@@ -156,8 +163,9 @@ class tsne(object):
         print '-' * 70
 
 
-
-
 if __name__ == '__main__':
+    args = get_args()
     vis = tsne()
-    vis.run()
+    x = np.load(args.x_dir)
+    y = np.load(args.y_dir)
+    vis.run(x, y)
